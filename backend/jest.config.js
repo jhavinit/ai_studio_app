@@ -1,24 +1,27 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  testMatch: ['**/tests/**/*.test.ts'],
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
-  collectCoverage: true,
-  coverageDirectory: 'coverage',
-  verbose: true,
-};
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 
-// module.exports = {
-//   preset: 'ts-jest',
-//   testEnvironment: 'node',
-//   roots: ['<rootDir>/tests'],
-//   testMatch: ['**/*.test.ts'],
-//   collectCoverageFrom: [
-//     'src/**/*.ts',
-//     '!src/**/*.d.ts',
-//   ],
-//   coverageDirectory: 'coverage',
-//   coverageReporters: ['text', 'lcov', 'json-summary'],
-//   verbose: true,
-// };
+export default {
+  preset: "ts-jest/presets/default-esm",
+  testEnvironment: "jsdom",
+  transform: {
+    "^.+\\.(t|j)sx?$": [
+      "ts-jest",
+      {
+        useESM: true,
+        tsconfig: "tsconfig.test.json"
+      }
+    ]
+  },
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "\\.(css|scss|sass)$": "identity-obj-proxy"
+  },
+  setupFilesAfterEnv: ["<rootDir>/src/setupTests.ts"],
+  testPathIgnorePatterns: ["/node_modules/", "/dist/"],
+  moduleDirectories: ["node_modules", "src"],
+  transformIgnorePatterns: [
+    "/node_modules/(?!(node-fetch|@react-hook/|@radix-ui|@hookform|react-hook-form|framer-motion|@floating-ui|react-markdown|rehype-raw|@tailwindcss|d3-array|d3-color|d3-format|d3-interpolate|d3-scale|d3-time|d3-time-format|internmap|react-markdown|rehype-raw|rehype-sanitize|rehype-slug|rehype-stringify|remark-gfm|remark-parse|remark-rehype|unified|unist-util-visit|vfile|vfile-message|@floating-ui|react-markdown|rehype-raw|rehype-sanitize|rehype-slug|rehype-stringify|remark-gfm|remark-parse|remark-rehype|unified|unist-util-visit|vfile|vfile-message)/)"
+  ],
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"]
+};
