@@ -12,26 +12,29 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-// app.use(
-//   cors({
-//     origin: process.env.FRONTEND_URL || "http://localhost:8080",
-//     credentials: true,
-//   })
-// );
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:8080",
+    credentials: true,
+  })
+);
+// app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Static files for uploaded images
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, `./${process.env.UPLOADS_DIR}`))
+);
 
 // Routes
 app.use("/auth", authRoutes);
 app.use("/generations", generationsRoutes);
 
 // Health check
-app.get("/health", (req, res) => {
+app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
@@ -39,9 +42,9 @@ app.get("/health", (req, res) => {
 app.use(
   (
     err: any,
-    req: express.Request,
+    _req: express.Request,
     res: express.Response,
-    next: express.NextFunction
+    _next: express.NextFunction
   ) => {
     console.error("Error:", err);
     res.status(err.status || 500).json({
@@ -65,6 +68,9 @@ const startServer = async () => {
   }
 };
 
-startServer();
+if (process.env.NODE_ENV !== "test") {
+  startServer();
+}
+// startServer();
 
 export default app;

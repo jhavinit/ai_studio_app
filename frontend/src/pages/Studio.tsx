@@ -23,8 +23,8 @@ import {
   X,
   Download,
   Trash2,
+  // Broom,
 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { motion } from "framer-motion";
 import AbortConfirmationDialog from "@/components/AbortConfirmationDialog";
 
@@ -41,36 +41,30 @@ const Studio = () => {
   const [restoredImageUrl, setRestoredImageUrl] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [style, setStyle] = useState("photorealistic");
-
   const [result, setResult] = useState<Generation | null>(null);
   const [refreshHistory, setRefreshHistory] = useState(0);
-
   const [showAbortDialog, setShowAbortDialog] = useState(false);
 
   const { user, logout, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { generate, abort, isLoading, error } = useGenerate({
+  const { generate, abort, isLoading } = useGenerate({
     onSuccess: (generation) => {
       setResult(generation);
       setRefreshHistory((prev) => prev + 1);
-
       setSelectedImage(null);
       setRestoredImageUrl(null);
       setPrompt("");
       setStyle("photorealistic");
-
       toast({
         title: "Generation Complete",
-        description:
-          "Your image has been generated and added to history successfully.",
+        description: "Your image has been generated successfully.",
       });
     },
-    onError: () => { },
   });
 
-  const { executeWithRetry, retryCount, isRetrying } = useRetry<Generation>({
+  const { executeWithRetry, isRetrying } = useRetry<Generation>({
     maxRetries: 3,
     onError: (errMsg) => {
       toast({
@@ -79,106 +73,66 @@ const Studio = () => {
         variant: "destructive",
       });
     },
-    onMaxRetriesReached: () => {
-      toast({
-        title: "Max Retries Reached",
-        description:
-          "The model is currently overloaded. Please try again later.",
-        variant: "destructive",
-      });
-    },
   });
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/login");
-    }
+    if (!authLoading && !user) navigate("/login");
   }, [user, authLoading, navigate]);
 
   const urlToFile = async (url: string): Promise<File> => {
     const response = await fetch(url);
     const blob = await response.blob();
-    const ext = (blob.type && blob.type.split("/")[1]) || "jpg";
-    const filename = `restored.${ext}`;
-    return new File([blob], filename, { type: blob.type });
+    const ext = blob.type.split("/")[1] || "jpg";
+    return new File([blob], `restored.${ext}`, { type: blob.type });
   };
 
   const handleGenerate = async () => {
-    if (!selectedImage && !restoredImageUrl) {
-      toast({
+    if (!selectedImage && !restoredImageUrl)
+      return toast({
         title: "Missing Image",
-        description: "Please upload an image or choose one from history.",
+        description: "Upload or choose an image first.",
         variant: "destructive",
       });
-      return;
-    }
-    if (!prompt || !style) {
-      toast({
+
+    if (!prompt || !style)
+      return toast({
         title: "Missing Input",
-        description: "Please enter a prompt and select a style.",
+        description: "Enter a prompt and select a style.",
         variant: "destructive",
       });
-      return;
-    }
 
-    try {
-      let fileToSend: File | null = selectedImage;
-      if (!fileToSend && restoredImageUrl) {
-        fileToSend = await urlToFile(restoredImageUrl);
-      }
-
-      await executeWithRetry(() =>
-        generate(fileToSend as File, prompt, style)
-      );
-    } catch {
-      toast({
-        title: "Generation Failed",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-    }
+    let fileToSend = selectedImage;
+    if (!fileToSend && restoredImageUrl)
+      fileToSend = await urlToFile(restoredImageUrl);
+    await executeWithRetry(() => generate(fileToSend as File, prompt, style));
   };
 
-  const handleHistorySelect = (generation: Generation) => {
-    setRestoredImageUrl(generation.imageUrl);
-    setPrompt(generation.prompt);
-    setStyle(generation.style);
-    setResult(generation);
-    toast({
-      title: "Loaded from history",
-      description:
-        "This generation is loaded into the workspace — you can tweak prompt or style and re-run.",
-    });
+  // 🧠 Load data from history but don't show final result
+  const handleHistorySelect = (g: Generation) => {
+    setRestoredImageUrl(g.imageUrl);
+    setPrompt(g.prompt);
+    setStyle(g.style);
+    setResult(null); // don't render final result
+    toast({ title: "Loaded from history" });
   };
 
-  const handleClearWorkspace = () => {
-    setSelectedImage(null);
-    setRestoredImageUrl(null);
-    setPrompt("");
-    setStyle("photorealistic");
-    setResult(null);
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
-  if (authLoading) {
+  if (authLoading)
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
       {/* Header */}
-      <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
+      <header
+        className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-50"
+        role="banner"
+      >
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Sparkles className="w-6 h-6 text-primary" />
+            <Sparkles className="w-6 h-6 text-primary" aria-hidden="true" />
             <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               AI Studio
             </h1>
@@ -188,68 +142,60 @@ const Studio = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="text-sm text-muted-foreground">{user?.email}</div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClearWorkspace}
-              title="Clear workspace"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Clear
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
+            <span className="text-sm text-muted-foreground">{user?.email}</span>
+            <Button variant="ghost" size="sm" onClick={logout}>
+              <LogOut className="w-4 h-4 mr-2" /> Logout
             </Button>
           </div>
         </div>
       </header>
 
       {/* Main */}
-      <div className="container mx-auto px-4 py-8">
+      <main
+        className="container mx-auto px-4 py-8"
+        role="main"
+        aria-labelledby="workspace-heading"
+      >
+        <h2 id="workspace-heading" className="sr-only">
+          Image generation workspace
+        </h2>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left side: workspace */}
+          {/* Workspace */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-card rounded-2xl border border-border/40 p-6 shadow-elegant">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-semibold">Create Generation</h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Upload or restore an image, enter a prompt, and choose a
-                    style.
-                  </p>
-                </div>
-                {(isLoading || isRetrying) && (
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                    <Loader2 className="animate-spin w-4 h-4" />
-                    {retryCount > 0
-                      ? `Retrying (${retryCount}/3)...`
-                      : "Generating..."}
-                  </div>
-                )}
-              </div>
+            {/* Create Section */}
+            <section
+              className="bg-card rounded-2xl border border-border/40 p-6 shadow-elegant"
+              aria-labelledby="create-section"
+            >
+              <h3
+                id="create-section"
+                className="text-2xl font-semibold mb-2 flex items-center gap-2"
+              >
+                <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />
+                Create Generation
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Upload or select an image, enter a prompt, and choose a style.
+              </p>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Upload section */}
+                {/* Upload */}
                 <div className="lg:col-span-1">
                   <Label className="text-base font-medium mb-3 block">
                     Image
                   </Label>
                   {selectedImage || restoredImageUrl ? (
                     <div className="relative rounded-lg overflow-hidden border border-border/30">
-                      <div className="w-full aspect-[4/3] bg-muted flex items-center justify-center">
-                        <img
-                          src={
-                            selectedImage
-                              ? URL.createObjectURL(selectedImage)
-                              : restoredImageUrl || ""
-                          }
-                          alt="Selected"
-                          className="object-cover w-full h-full"
-                        />
-                      </div>
-
+                      <img
+                        src={
+                          selectedImage
+                            ? URL.createObjectURL(selectedImage)
+                            : restoredImageUrl || ""
+                        }
+                        alt="Selected"
+                        className="object-cover w-full aspect-[4/3]"
+                      />
                       <div className="flex gap-2 p-3">
                         <Button
                           variant="outline"
@@ -262,21 +208,19 @@ const Studio = () => {
                         >
                           Replace
                         </Button>
-
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            const url = selectedImage
-                              ? URL.createObjectURL(selectedImage)
-                              : restoredImageUrl;
+                            const url =
+                              selectedImage
+                                ? URL.createObjectURL(selectedImage)
+                                : restoredImageUrl;
                             if (!url) return;
                             const a = document.createElement("a");
                             a.href = url;
                             a.download = "image.png";
-                            document.body.appendChild(a);
                             a.click();
-                            a.remove();
                           }}
                         >
                           <Download className="w-4 h-4 mr-2" />
@@ -304,7 +248,7 @@ const Studio = () => {
                     </Label>
                     <Textarea
                       id="prompt"
-                      placeholder="Describe what you want to generate..."
+                      placeholder="Describe what to generate..."
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
                       disabled={isLoading || isRetrying}
@@ -314,15 +258,10 @@ const Studio = () => {
 
                   <div className="flex items-center gap-4">
                     <div className="w-1/2">
-                      <Label
-                        htmlFor="style"
-                        className="text-base font-medium mb-2 block"
-                      >
-                        Style
-                      </Label>
+                      <Label htmlFor="style">Style</Label>
                       <Select
                         value={style}
-                        onValueChange={(val) => setStyle(val)}
+                        onValueChange={setStyle}
                         disabled={isLoading || isRetrying}
                       >
                         <SelectTrigger id="style">
@@ -354,14 +293,11 @@ const Studio = () => {
                         {isLoading || isRetrying ? (
                           <>
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            {retryCount > 0
-                              ? `Retrying (${retryCount}/3)...`
-                              : "Generating..."}
+                            Generating...
                           </>
                         ) : (
                           <>
-                            <Sparkles className="h-4 w-4" />
-                            Generate
+                            <Sparkles className="h-4 w-4" /> Generate
                           </>
                         )}
                       </Button>
@@ -372,140 +308,103 @@ const Studio = () => {
                     <div className="mt-4 flex justify-end">
                       <Button
                         variant="outline"
-                        className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
                         onClick={() => setShowAbortDialog(true)}
+                        className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
                       >
-                        <X className="mr-2 h-4 w-4" />
-                        Abort Generation
+                        <X className="mr-2 h-4 w-4" /> Abort
                       </Button>
                     </div>
                   )}
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Result Section */}
+            {/* Final Result Section */}
             {result && (
-              <motion.div
+              <motion.section
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                className="bg-card rounded-2xl border border-border/40 p-6 shadow-elegant"
+                transition={{ duration: 0.4 }}
+                className="relative bg-card rounded-2xl border border-border/40 p-6 shadow-elegant"
+                aria-labelledby="result-section"
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-semibold flex items-center gap-2">
-                      <Sparkles className="text-primary h-5 w-5" />
-                      Final Result
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      You can download or re-use this as a new base.
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3
+                    id="result-section"
+                    className="text-2xl font-semibold flex items-center gap-2"
+                  >
+                    <Sparkles className="text-primary h-5 w-5" /> Final Result
+                  </h3>
 
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        const a = document.createElement("a");
-                        a.href = result.imageUrl;
-                        a.download = "generation.png";
-                        document.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                      }}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setRestoredImageUrl(result.imageUrl);
-                        setPrompt(result.prompt);
-                        setStyle(result.style);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                    >
-                      Re-Use
-                    </Button>
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setResult(null);
+                      toast({
+                        title: "Workspace Cleared",
+                        description: "Cleaned Workspace",
+                      });
+                    }}
+                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Clear
+                  </Button>
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2">
-                    <div className="rounded-xl overflow-hidden border border-primary/20 shadow-md">
-                      <img
-                        src={result.imageUrl}
-                        alt={result.prompt}
-                        className="w-full h-auto object-contain"
-                      />
-                    </div>
+                    <img
+                      src={result.imageUrl}
+                      alt={result.prompt}
+                      className="rounded-xl border border-primary/20 shadow-md w-full"
+                    />
                   </div>
 
                   <div className="space-y-3 text-sm">
                     <div>
                       <div className="text-xs text-muted-foreground">Prompt</div>
-                      <div className="mt-1 text-sm break-words">
-                        {result.prompt}
-                      </div>
+                      <div className="mt-1 break-words">{result.prompt}</div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground">Style</div>
-                      <div className="mt-1 text-sm capitalize">
-                        {result.style}
-                      </div>
+                      <div className="mt-1 capitalize">{result.style}</div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground">Created</div>
-                      <div className="mt-1 text-sm">
+                      <div className="mt-1">
                         {new Date(result.createdAt).toLocaleString()}
                       </div>
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </motion.section>
             )}
           </div>
 
-          {/* History */}
-          <aside className="lg:col-span-1">
-            <div className="bg-card rounded-2xl border border-border/40 p-4 shadow-elegant sticky top-24">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold">History</h3>
-                <div className="text-sm text-muted-foreground">Recent</div>
-              </div>
+          {/* History Sidebar */}
+          <aside
+            className="lg:col-span-1 bg-card rounded-2xl border border-border/40 p-4 shadow-elegant sticky top-24 flex flex-col max-h-[calc(100vh-8rem)] overflow-hidden"
+            aria-label="Previous generations history"
+          >
+            <h3 className="text-lg font-semibold mb-3 flex-shrink-0">History</h3>
 
+            <div className="flex-1 min-h-0 overflow-hidden">
               <GenerationHistory
                 onSelect={handleHistorySelect}
                 refreshTrigger={refreshHistory}
-                renderItem={(g) => (
-                  <div className="group relative overflow-hidden rounded-md border border-border/30 hover:border-primary/40 cursor-pointer">
-                    <img
-                      src={g.imageUrl}
-                      alt={g.prompt}
-                      className="w-full aspect-square object-cover transition-transform group-hover:scale-105"
-                    />
-                    <div className="absolute left-2 bottom-2 right-2 bg-black/40 p-2 rounded-md opacity-0 group-hover:opacity-100 transition-opacity text-xs text-white">
-                      <div className="truncate">{g.prompt}</div>
-                      <div className="text-[11px] text-muted-foreground mt-1 flex justify-between">
-                        <span className="capitalize">{g.style}</span>
-                        <span>
-                          {new Date(g.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
               />
-              <div className="mt-4 text-center text-xs text-muted-foreground">
-                Click a thumbnail to load it into the workspace.
-              </div>
             </div>
+
+            <p className="mt-4 text-center text-xs text-muted-foreground flex-shrink-0">
+              Tab or click an image to load it into the workspace.
+            </p>
           </aside>
         </div>
-      </div>
+      </main>
 
-      {/* Abort Confirmation Dialog */}
+      {/* Abort Dialog */}
       <AbortConfirmationDialog
         open={showAbortDialog}
         onCancel={() => setShowAbortDialog(false)}
@@ -513,9 +412,10 @@ const Studio = () => {
           abort();
           toast({
             title: "Generation Aborted",
-            description: "You stopped the current process.",
+            description: "Process stopped.",
             variant: "destructive",
           });
+          setShowAbortDialog(false);
         }}
       />
     </div>

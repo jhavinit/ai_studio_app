@@ -25,14 +25,17 @@ const deleteUploadedFile = (filePath?: string) => {
   if (filePath && fs.existsSync(filePath)) {
     fs.unlink(filePath, (err) => {
       if (err) console.error("Failed to delete uploaded file:", err);
-      else console.log("🗑️ Deleted unused uploaded file:", filePath);
+      // else console.log("🗑️ Deleted unused uploaded file:", filePath);
     });
   }
 };
 
-export const createNewGeneration = async (req: AuthRequest, res: Response) => {
+export const createNewGeneration = async (
+  req: AuthRequest,
+  res: Response
+): Promise<Response> => {
   const uploadedFilePath = req.file
-    ? path.join(__dirname, "../../uploads", req.file.filename)
+    ? path.join(__dirname, `../${process.env.UPLOADS_DIR}`, req.file.filename)
     : undefined;
 
   try {
@@ -82,9 +85,9 @@ export const createNewGeneration = async (req: AuthRequest, res: Response) => {
 
     // Construct the new image URL for the generated version
     const generatedFilename = path.basename(generatedFilePath);
-    const imageUrl = `http://localhost:${
-      process.env.PORT || 3001
-    }/uploads/${generatedFilename}`;
+    const imageUrl = `http://localhost:${process.env.PORT || 3001}/${
+      process.env.UPLOADS_DIR
+    }/${generatedFilename}`;
 
     // Save generation record in DB
     const generation = await createGeneration(
@@ -95,7 +98,7 @@ export const createNewGeneration = async (req: AuthRequest, res: Response) => {
       "success"
     );
 
-    res.json({
+    return res.status(201).json({
       id: generation.id,
       imageUrl: generation.image_url,
       prompt: generation.prompt,
@@ -117,11 +120,14 @@ export const createNewGeneration = async (req: AuthRequest, res: Response) => {
     }
 
     console.error("Generation error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
-export const getUserGenerations = async (req: AuthRequest, res: Response) => {
+export const getUserGenerations = async (
+  req: AuthRequest,
+  res: Response
+): Promise<Response> => {
   try {
     const userId = req.userId;
     if (!userId) {
@@ -141,9 +147,9 @@ export const getUserGenerations = async (req: AuthRequest, res: Response) => {
       status: g.status,
     }));
 
-    res.json(formattedGenerations);
+    return res.status(200).json(formattedGenerations);
   } catch (error) {
     console.error("Get generations error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

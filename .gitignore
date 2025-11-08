@@ -24,7 +24,11 @@ dist-ssr
 *.sw?
 
 .env
+.env.test
 
 uploads
+uploads-test
 
 package-lock.json
+
+coverage
