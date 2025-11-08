@@ -3,7 +3,7 @@ import { AppDataSource } from "../src/models/database";
 import dotenv from "dotenv";
 import path from "path";
 
-dotenv.config({ path: path.join(__dirname, "../.env.test") });
+dotenv.config({ path: path.join(__dirname, "../.env") });
 
 beforeAll(async () => {
   if (!AppDataSource.isInitialized) {
