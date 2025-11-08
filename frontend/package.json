@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "jest --config jest.config.js --env=jsdom",
+    "test": "jest --config jest.config.js --env=jsdom --coverage",
     "test:ci": "jest --runInBand --detectOpenHandles --coverage"
   },
   "dependencies": {
