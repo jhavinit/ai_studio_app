@@ -20,7 +20,7 @@ const GenerationHistory = ({ onSelect, refreshTrigger }: GenerationHistoryProps)
   useEffect(() => {
     const fetchGenerations = async () => {
       if (!token) return;
-      
+
       setIsLoading(true);
       try {
         const response = await fetch('http://localhost:3001/generations?limit=5', {
@@ -106,7 +106,7 @@ const GenerationHistory = ({ onSelect, refreshTrigger }: GenerationHistoryProps)
                   </p>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span className="capitalize">{generation.style}</span>
-                    <span>{new Date(generation.createdAt).toLocaleDateString()}</span>
+                    <span>{new Date(generation.createdAt).toLocaleString()}</span>
                   </div>
                 </div>
               </div>

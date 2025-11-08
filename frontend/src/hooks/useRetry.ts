@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
 
 interface UseRetryOptions<T> {
   maxRetries?: number;
@@ -7,7 +7,7 @@ interface UseRetryOptions<T> {
   onMaxRetriesReached?: () => void;
 }
 
-export const useRetry = <T,>({
+export const useRetry = <T>({
   maxRetries = 3,
   onSuccess,
   onError,
@@ -30,14 +30,21 @@ export const useRetry = <T,>({
           return result;
         } catch (error: any) {
           lastError = error;
-          
+
           // Check if it's a "Model overloaded" error
-          if (error.message?.includes('Model overloaded') && attempt < maxRetries) {
+          if (
+            error.message?.includes("Model overloaded") &&
+            attempt < maxRetries
+          ) {
             setRetryCount(attempt + 1);
-            onError?.(`Model overloaded. Retrying (${attempt + 1}/${maxRetries})...`);
-            
+            onError?.(
+              `Model overloaded. Retrying (${attempt + 1}/${maxRetries})...`
+            );
+
             // Exponential backoff: 1s, 2s, 4s
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+            await new Promise((resolve) =>
+              setTimeout(resolve, Math.pow(2, attempt) * 1000)
+            );
           } else {
             // Don't retry for other errors
             break;
@@ -47,14 +54,14 @@ export const useRetry = <T,>({
 
       setIsRetrying(false);
       setRetryCount(0);
-      
-      if (lastError?.message?.includes('Model overloaded')) {
+
+      if (lastError?.message?.includes("Model overloaded")) {
         onMaxRetriesReached?.();
-        onError?.('Max retries reached. Please try again later.');
+        onError?.("Max retries reached. Please try again later.");
       } else {
-        onError?.(lastError?.message || 'An error occurred');
+        onError?.(lastError?.message || "An error occurred");
       }
-      
+
       throw lastError;
     },
     [maxRetries, onSuccess, onError, onMaxRetriesReached]
