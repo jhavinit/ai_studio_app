@@ -8,7 +8,11 @@ export const simulateGeneration = async (): Promise<{
 
   // 20% chance of "Model overloaded" error
   if (Math.random() < 0.2) {
-    return { success: false, message: "Model overloaded" };
+    console.log("Model overloaded");
+    return {
+      success: false,
+      message: "Model overloaded",
+    };
   }
 
   return { success: true };

@@ -1,50 +1,90 @@
-import { Response } from 'express';
-import { z } from 'zod';
-import { AuthRequest } from '../middleware/auth';
-import { createGeneration, findGenerationsByUserId } from '../models/Generation';
-import { simulateGeneration } from '../services/generationService';
+import { Response } from "express";
+import { z } from "zod";
+import { AuthRequest } from "../middleware/auth";
+import {
+  createGeneration,
+  findGenerationsByUserId,
+} from "../models/Generation";
+import { simulateGeneration } from "../services/generationService";
+import fs from "fs";
+import path from "path";
 
 const generationSchema = z.object({
-  prompt: z.string().min(1, 'Prompt is required').max(1000, 'Prompt too long'),
-  style: z.enum(['photorealistic', 'artistic', 'abstract', 'vintage', 'modern']),
+  prompt: z.string().min(1, "Prompt is required").max(1000, "Prompt too long"),
+  style: z.enum([
+    "photorealistic",
+    "artistic",
+    "abstract",
+    "vintage",
+    "modern",
+  ]),
 });
 
+const deleteUploadedFile = (filePath?: string) => {
+  if (filePath && fs.existsSync(filePath)) {
+    fs.unlink(filePath, (err) => {
+      if (err) console.error("Failed to delete uploaded file:", err);
+      else console.log("🗑️ Deleted unused uploaded file:", filePath);
+    });
+  }
+};
+
 export const createNewGeneration = async (req: AuthRequest, res: Response) => {
+  const uploadedFilePath = req.file
+    ? path.join(__dirname, "../../uploads", req.file.filename)
+    : undefined;
+
   try {
     const userId = req.userId;
     if (!userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      deleteUploadedFile(uploadedFilePath);
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Validate request body
+    // Validate body
     const { prompt, style } = generationSchema.parse(req.body);
 
-    // Validate image upload
+    // Validate image presence
     if (!req.file) {
-      return res.status(400).json({ message: 'Image is required' });
+      return res.status(400).json({ message: "Image is required" });
     }
 
-    // Validate file type
-    const allowedMimes = ['image/jpeg', 'image/png'];
+    // Validate mime type
+    const allowedMimes = ["image/jpeg", "image/png"];
     if (!allowedMimes.includes(req.file.mimetype)) {
-      return res.status(400).json({ message: 'Only JPEG and PNG images are allowed' });
+      deleteUploadedFile(uploadedFilePath);
+      return res
+        .status(400)
+        .json({ message: "Only JPEG and PNG images are allowed" });
     }
 
-    // Validate file size (10MB max)
+    // Validate size
     if (req.file.size > 10 * 1024 * 1024) {
-      return res.status(400).json({ message: 'Image size must be less than 10MB' });
+      deleteUploadedFile(uploadedFilePath);
+      return res
+        .status(400)
+        .json({ message: "Image size must be less than 10MB" });
     }
 
     // Simulate AI generation
     const result = await simulateGeneration();
 
     if (!result.success) {
+      deleteUploadedFile(uploadedFilePath);
       return res.status(503).json({ message: result.message });
     }
 
-    // Save generation to database
-    const imageUrl = `http://localhost:${process.env.PORT || 3001}/uploads/${req.file.filename}`;
-    const generation = await createGeneration(userId, imageUrl, prompt, style, 'success');
+    // Save generation record in DB
+    const imageUrl = `http://localhost:${process.env.PORT || 3001}/uploads/${
+      req.file.filename
+    }`;
+    const generation = await createGeneration(
+      userId,
+      imageUrl,
+      prompt,
+      style,
+      "success"
+    );
 
     res.json({
       id: generation.id,
@@ -55,14 +95,21 @@ export const createNewGeneration = async (req: AuthRequest, res: Response) => {
       status: generation.status,
     });
   } catch (error) {
+    // 🧹 always clean up file if something went wrong
+    deleteUploadedFile(uploadedFilePath);
+
     if (error instanceof z.ZodError) {
       return res.status(400).json({
-        message: 'Validation error',
-        errors: error.errors.map(e => ({ field: e.path.join('.'), message: e.message })),
+        message: "Validation error",
+        errors: error.errors.map((e) => ({
+          field: e.path.join("."),
+          message: e.message,
+        })),
       });
     }
-    console.error('Generation error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+
+    console.error("Generation error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -70,14 +117,14 @@ export const getUserGenerations = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
     if (!userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const limit = parseInt(req.query.limit as string) || 5;
 
     const generations = await findGenerationsByUserId(userId, limit);
 
-    const formattedGenerations = generations.map(g => ({
+    const formattedGenerations = generations.map((g) => ({
       id: g.id,
       imageUrl: g.image_url,
       prompt: g.prompt,
@@ -88,7 +135,7 @@ export const getUserGenerations = async (req: AuthRequest, res: Response) => {
 
     res.json(formattedGenerations);
   } catch (error) {
-    console.error('Get generations error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Get generations error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
