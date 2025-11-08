@@ -26,8 +26,8 @@ dist-ssr
 .env
 .env.test
 
-uploads
-uploads-test
+uploads/*
+!uploads/test-image.png
 
 package-lock.json
 
