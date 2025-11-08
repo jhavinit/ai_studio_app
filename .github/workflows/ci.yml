@@ -1,10 +1,14 @@
-name: 🧪 Backend CI — Node.js + PostgreSQL
+name: 🧪 Full CI — Backend + Frontend
 
 on:
   push:
     branches: [master]
+  pull_request:
 
 jobs:
+  # -------------------------
+  # 🧱 Backend Tests (Postgres)
+  # -------------------------
   backend-tests:
     runs-on: ubuntu-latest
     defaults:
@@ -15,26 +19,26 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: aistudio_user
-          POSTGRES_PASSWORD: aistudio_pass
-          POSTGRES_DB: aistudio_db
+          POSTGRES_USER: ${{ secrets.PG_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.PG_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.PG_DB }}
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U aistudio_user -d aistudio_db"
+          --health-cmd="pg_isready -U ${{ secrets.PG_USER }} -d ${{ secrets.PG_DB }}"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     env:
-      PORT: 3001
-      NODE_ENV: test
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
-      PG_HOST: localhost
-      PG_PORT: 5432
-      PG_USER: aistudio_user
-      PG_PASSWORD: aistudio_pass
-      PG_DB: aistudio_db
+      PORT: ${{ vars.PORT }}
+      NODE_ENV: ${{ vars.NODE_ENV }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      PG_HOST: ${{ vars.PG_HOST }}
+      PG_PORT: ${{ vars.PG_PORT }}
+      PG_USER: ${{ secrets.PG_USER }}
+      PG_PASSWORD: ${{ secrets.PG_PASSWORD }}
+      PG_DB: ${{ secrets.PG_DB }}
       DB_TYPE: postgres
       UPLOADS_DIR: uploads
 
@@ -42,13 +46,11 @@ jobs:
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
-      # ✅ No caching here (since no package-lock.json)
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # ✅ Optional caching (manual)
       - name: ♻️ Cache npm packages
         uses: actions/cache@v4
         with:
@@ -63,9 +65,48 @@ jobs:
       - name: 🧪 Run Jest tests
         run: npm test
 
-      - name: 📊 Upload coverage artifact
+      - name: 📊 Upload backend coverage artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: backend-coverage
           path: backend/coverage
+
+  # -------------------------
+  # 🎨 Frontend Tests (React)
+  # -------------------------
+  frontend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: ♻️ Cache npm packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🧪 Run Jest / Vite tests
+        run: npm test
+
+      - name: 📊 Upload frontend coverage artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
