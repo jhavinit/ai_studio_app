@@ -36,7 +36,7 @@ jobs:
       PG_PASSWORD: aistudio_pass
       PG_DB: aistudio_db
       DB_TYPE: postgres
-      UPLOADS_DIR: uploads-test
+      UPLOADS_DIR: uploads
 
     steps:
       - name: 🧩 Checkout repository
