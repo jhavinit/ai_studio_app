@@ -95,9 +95,11 @@ const GenerationHistory = ({ onSelect, refreshTrigger }: GenerationHistoryProps)
               >
                 <div className="aspect-video bg-muted relative overflow-hidden">
                   <img
+                    loading="lazy"
                     src={generation.imageUrl}
                     alt={generation.prompt}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full aspect-square object-cover rounded-md transform transition-transform duration-300 hover:scale-105"
+                  // className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
                 <div className="p-3 space-y-1">

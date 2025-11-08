@@ -12,12 +12,14 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:8080",
-    credentials: true,
-  })
-);
+// app.use(
+//   cors({
+//     origin: process.env.FRONTEND_URL || "http://localhost:8080",
+//     credentials: true,
+//   })
+// );
+app.use(cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -8,6 +8,7 @@ import {
 import { simulateGeneration } from "../services/generationService";
 import fs from "fs";
 import path from "path";
+import { mockGenerateImage } from "../services/mockImageGenerator";
 
 const generationSchema = z.object({
   prompt: z.string().min(1, "Prompt is required").max(1000, "Prompt too long"),
@@ -41,15 +42,12 @@ export const createNewGeneration = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Validate body
     const { prompt, style } = generationSchema.parse(req.body);
 
-    // Validate image presence
     if (!req.file) {
       return res.status(400).json({ message: "Image is required" });
     }
 
-    // Validate mime type
     const allowedMimes = ["image/jpeg", "image/png"];
     if (!allowedMimes.includes(req.file.mimetype)) {
       deleteUploadedFile(uploadedFilePath);
@@ -58,7 +56,6 @@ export const createNewGeneration = async (req: AuthRequest, res: Response) => {
         .json({ message: "Only JPEG and PNG images are allowed" });
     }
 
-    // Validate size
     if (req.file.size > 10 * 1024 * 1024) {
       deleteUploadedFile(uploadedFilePath);
       return res
@@ -66,7 +63,7 @@ export const createNewGeneration = async (req: AuthRequest, res: Response) => {
         .json({ message: "Image size must be less than 10MB" });
     }
 
-    // Simulate AI generation
+    // Simulate AI generation process
     const result = await simulateGeneration();
 
     if (!result.success) {
@@ -74,10 +71,22 @@ export const createNewGeneration = async (req: AuthRequest, res: Response) => {
       return res.status(503).json({ message: result.message });
     }
 
+    // ✅ MOCK AI GENERATION USING SHARP
+    const generatedFilePath = await mockGenerateImage(
+      uploadedFilePath!,
+      prompt
+    );
+
+    // You can optionally delete the original uploaded image if you want
+    deleteUploadedFile(uploadedFilePath);
+
+    // Construct the new image URL for the generated version
+    const generatedFilename = path.basename(generatedFilePath);
+    const imageUrl = `http://localhost:${
+      process.env.PORT || 3001
+    }/uploads/${generatedFilename}`;
+
     // Save generation record in DB
-    const imageUrl = `http://localhost:${process.env.PORT || 3001}/uploads/${
-      req.file.filename
-    }`;
     const generation = await createGeneration(
       userId,
       imageUrl,
@@ -94,8 +103,7 @@ export const createNewGeneration = async (req: AuthRequest, res: Response) => {
       createdAt: generation.created_at,
       status: generation.status,
     });
-  } catch (error) {
-    // 🧹 always clean up file if something went wrong
+  } catch (error: any) {
     deleteUploadedFile(uploadedFilePath);
 
     if (error instanceof z.ZodError) {
