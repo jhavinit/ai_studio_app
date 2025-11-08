@@ -1,0 +1,266 @@
+openapi: 3.0.3
+info:
+  title: AI Studio API
+  description: REST API for AI image generation studio with authentication and generation management
+  version: 1.0.0
+  contact:
+    name: AI Studio Team
+    email: support@aistudio.com
+
+servers:
+  - url: http://localhost:3001
+    description: Development server
+
+tags:
+  - name: Authentication
+    description: User authentication endpoints
+  - name: Generations
+    description: Image generation endpoints
+
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Create a new user account
+      description: Register a new user with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  example: password123
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input or user already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login to existing account
+      description: Authenticate user with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /generations:
+    post:
+      tags:
+        - Generations
+      summary: Create a new generation
+      description: Upload an image with prompt and style to generate AI output. Has a 20% chance of returning "Model overloaded" error to simulate real-world conditions.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+                - prompt
+                - style
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG or PNG, max 10MB)
+                prompt:
+                  type: string
+                  example: A beautiful sunset over mountains
+                  maxLength: 1000
+                style:
+                  type: string
+                  enum: [photorealistic, artistic, abstract, vintage, modern]
+                  example: photorealistic
+      responses:
+        '200':
+          description: Generation created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generation'
+        '400':
+          description: Invalid input (missing fields, invalid file, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Model overloaded (20% chance, simulated)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Model overloaded
+    get:
+      tags:
+        - Generations
+      summary: Get recent generations
+      description: Retrieve the user's recent generations with optional limit
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 5
+            minimum: 1
+            maximum: 50
+          description: Maximum number of generations to return
+      responses:
+        '200':
+          description: List of generations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Generation'
+        '401':
+          description: Unauthorized - missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          format: email
+          example: user@example.com
+
+    Generation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        imageUrl:
+          type: string
+          format: uri
+          example: http://localhost:3001/uploads/1234567890.jpg
+        prompt:
+          type: string
+          example: A beautiful sunset over mountains
+        style:
+          type: string
+          enum: [photorealistic, artistic, abstract, vintage, modern]
+          example: photorealistic
+        createdAt:
+          type: string
+          format: date-time
+          example: '2024-01-15T10:30:00.000Z'
+        status:
+          type: string
+          enum: [success, error]
+          example: success
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Invalid credentials
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+security:
+  - BearerAuth: []
