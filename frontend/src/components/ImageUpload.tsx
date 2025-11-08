@@ -1,56 +1,74 @@
-import { useCallback, useState } from 'react';
-import { Upload, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { useCallback, useState } from "react";
+import { Upload, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadProps {
-  onImageSelect: (file: File) => void;
+  onImageSelect: (file: File | null) => void;
   selectedImage: File | null;
   disabled?: boolean;
 }
+
+const MAX_WIDTH = 1920;
 
 const ImageUpload = ({ onImageSelect, selectedImage, disabled }: ImageUploadProps) => {
   const [preview, setPreview] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    
-    if (!file) return;
+  const resizeImage = async (file: File): Promise<File> => {
+    const image = await createImageBitmap(file);
+    if (image.width <= MAX_WIDTH) return file;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: 'Invalid File',
-        description: 'Please upload an image file (JPEG or PNG)',
-        variant: 'destructive',
-      });
-      return;
-    }
+    const scale = MAX_WIDTH / image.width;
+    const canvas = document.createElement("canvas");
+    canvas.width = MAX_WIDTH;
+    canvas.height = image.height * scale;
+    const ctx = canvas.getContext("2d");
+    ctx?.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: 'File Too Large',
-        description: 'Please upload an image smaller than 10MB',
-        variant: 'destructive',
-      });
-      return;
-    }
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((b) => resolve(b), file.type, 0.9)
+    );
+    if (!blob) return file;
+    return new File([blob], file.name, { type: file.type });
+  };
 
-    onImageSelect(file);
-    
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  }, [onImageSelect, toast]);
+  const handleFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Invalid File",
+          description: "Please upload an image file (JPEG or PNG)",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: "Please upload an image smaller than 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const resized = await resizeImage(file);
+      onImageSelect(resized);
+
+      const reader = new FileReader();
+      reader.onloadend = () => setPreview(reader.result as string);
+      reader.readAsDataURL(resized);
+    },
+    [onImageSelect, toast]
+  );
 
   const clearImage = useCallback(() => {
     setPreview(null);
-    onImageSelect(null as any);
+    onImageSelect(null);
   }, [onImageSelect]);
 
   return (
@@ -58,11 +76,7 @@ const ImageUpload = ({ onImageSelect, selectedImage, disabled }: ImageUploadProp
       <div className="relative">
         {preview ? (
           <div className="relative rounded-lg overflow-hidden border-2 border-primary/20 bg-card">
-            <img 
-              src={preview} 
-              alt="Preview" 
-              className="w-full h-64 object-contain"
-            />
+            <img src={preview} alt="Preview" className="w-full h-64 object-contain" />
             <Button
               type="button"
               variant="destructive"
@@ -75,19 +89,29 @@ const ImageUpload = ({ onImageSelect, selectedImage, disabled }: ImageUploadProp
             </Button>
           </div>
         ) : (
-          <label 
-            htmlFor="image-upload" 
-            className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
-              disabled 
-                ? 'border-muted bg-muted/50 cursor-not-allowed' 
-                : 'border-primary/30 bg-muted/20 hover:bg-muted/40 hover:border-primary/50'
-            }`}
+          <label
+            htmlFor="image-upload"
+            role="button"
+            tabIndex={0}
+            aria-label="Upload image"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                document.getElementById("image-upload")?.click();
+              }
+            }}
+            className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${disabled
+                ? "border-muted bg-muted/50 cursor-not-allowed"
+                : "border-primary/30 bg-muted/20 hover:bg-muted/40 hover:border-primary/50"
+              }`}
           >
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <Upload className={`w-12 h-12 mb-4 ${disabled ? 'text-muted-foreground' : 'text-primary'}`} />
-              <p className="mb-2 text-sm font-medium">
-                Click to upload image
-              </p>
+              <Upload
+                className={`w-12 h-12 mb-4 ${disabled ? "text-muted-foreground" : "text-primary"
+                  }`}
+                aria-hidden="true"
+              />
+              <p className="mb-2 text-sm font-medium">Click or press Enter to upload</p>
               <p className="text-xs text-muted-foreground">
                 JPEG or PNG (MAX. 10MB)
               </p>
@@ -103,7 +127,7 @@ const ImageUpload = ({ onImageSelect, selectedImage, disabled }: ImageUploadProp
           </label>
         )}
       </div>
-      
+
       {selectedImage && (
         <div className="text-sm text-muted-foreground">
           <p className="font-medium">{selectedImage.name}</p>

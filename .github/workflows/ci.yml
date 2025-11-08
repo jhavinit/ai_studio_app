@@ -1,153 +1,77 @@
-# name: CI Pipeline
+name: 🧪 Backend CI — Node.js + PostgreSQL
 
-# on:
-#   push:
-#     branches: [ main, develop ]
-#   pull_request:
-#     branches: [ main, develop ]
+on:
+  push:
+    branches: [master]
 
-# jobs:
-#   lint-and-test:
-#     runs-on: ubuntu-latest
-    
-#     strategy:
-#       matrix:
-#         node-version: [18.x, 20.x]
-    
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v3
-      
-#       - name: Setup Node.js ${{ matrix.node-version }}
-#         uses: actions/setup-node@v3
-#         with:
-#           node-version: ${{ matrix.node-version }}
-#           cache: 'npm'
-      
-#       # Frontend
-#       - name: Install frontend dependencies
-#         run: npm ci
-      
-#       - name: Lint frontend
-#         run: npm run lint
-      
-#       - name: Run frontend tests
-#         run: npm test -- --coverage --watchAll=false
-      
-#       - name: Upload frontend coverage
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: frontend-coverage-${{ matrix.node-version }}
-#           path: coverage/
-      
-#       # Backend
-#       - name: Install backend dependencies
-#         working-directory: ./backend
-#         run: npm ci
-      
-#       - name: Lint backend
-#         working-directory: ./backend
-#         run: npm run lint
-      
-#       - name: Run backend tests
-#         working-directory: ./backend
-#         run: npm test -- --coverage --watchAll=false
-#         env:
-#           NODE_ENV: test
-#           JWT_SECRET: test-secret-key-for-ci
-      
-#       - name: Upload backend coverage
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: backend-coverage-${{ matrix.node-version }}
-#           path: backend/coverage/
-      
-#       # Build checks
-#       - name: Build frontend
-#         run: npm run build
-      
-#       - name: Build backend
-#         working-directory: ./backend
-#         run: npm run build
-  
-#   e2e-tests:
-#     runs-on: ubuntu-latest
-#     needs: lint-and-test
-    
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v3
-      
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v3
-#         with:
-#           node-version: 18.x
-#           cache: 'npm'
-      
-#       - name: Install dependencies
-#         run: |
-#           npm ci
-#           cd backend && npm ci && cd ..
-      
-#       - name: Install Playwright browsers
-#         run: npx playwright install --with-deps
-      
-#       - name: Start backend server
-#         working-directory: ./backend
-#         run: |
-#           npm run dev &
-#           sleep 5
-#         env:
-#           NODE_ENV: test
-#           JWT_SECRET: test-secret-key-for-ci
-#           PORT: 3001
-      
-#       - name: Start frontend server
-#         run: |
-#           npm run dev &
-#           sleep 5
-      
-#       - name: Run E2E tests
-#         run: npm run test:e2e
-      
-#       - name: Upload E2E test results
-#         if: always()
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: e2e-test-results
-#           path: test-results/
-      
-#       - name: Upload E2E screenshots
-#         if: failure()
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: e2e-screenshots
-#           path: test-results/screenshots/
-  
-#   coverage-report:
-#     runs-on: ubuntu-latest
-#     needs: lint-and-test
-    
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v3
-      
-#       - name: Download frontend coverage
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: frontend-coverage-18.x
-#           path: frontend-coverage/
-      
-#       - name: Download backend coverage
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: backend-coverage-18.x
-#           path: backend-coverage/
-      
-#       - name: Display coverage summary
-#         run: |
-#           echo "=== Frontend Coverage ==="
-#           cat frontend-coverage/coverage-summary.json || echo "No frontend coverage found"
-#           echo ""
-#           echo "=== Backend Coverage ==="
-#           cat backend-coverage/coverage-summary.json || echo "No backend coverage found"
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend  # all commands run inside backend folder
+
+    # 👇 Spin up PostgreSQL as a service container
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: aistudio_user
+          POSTGRES_PASSWORD: aistudio_pass
+          POSTGRES_DB: aistudio_db
+        ports:
+          - 5432:5432
+        # Wait until the database is ready
+        options: >-
+          --health-cmd="pg_isready -U aistudio_user -d aistudio_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      # 🌐 App Configuration
+      PORT: 3001
+      NODE_ENV: test
+
+      # 🔐 Security
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+
+      # 🗄️ PostgreSQL Configuration
+      PG_HOST: localhost
+      PG_PORT: 5432
+      PG_USER: aistudio_user
+      PG_PASSWORD: aistudio_pass
+      PG_DB: aistudio_db
+      DB_TYPE: postgres
+
+      # ⚙️ Optional Configs
+      UPLOADS_DIR: uploads-test
+
+    steps:
+      # 1️⃣ Checkout your repository
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Node.js
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      # 3️⃣ Install dependencies
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      # 5️⃣ Run tests
+      - name: 🧪 Run Jest tests
+        run: npm test
+
+      # 6️⃣ Optionally, upload test results / coverage
+      - name: 📊 Upload coverage artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/coverage

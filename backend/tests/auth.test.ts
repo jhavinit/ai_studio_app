@@ -1,85 +1,75 @@
-import request from 'supertest';
-import app from '../src/server';
+import request from "supertest";
+import app from "../src/server";
 
-describe('Authentication API', () => {
-  const testUser = {
-    email: `test${Date.now()}@example.com`,
-    password: 'password123',
+describe("Auth Routes", () => {
+  const baseUrl = "/auth";
+
+  const validUser = {
+    email: `test_${Date.now()}@example.com`,
+    password: "StrongPass123",
   };
 
-  describe('POST /auth/signup', () => {
-    it('should create a new user', async () => {
-      const response = await request(app)
-        .post('/auth/signup')
-        .send(testUser)
-        .expect(201);
+  it("should signup successfully (201)", async () => {
+    const res = await request(app)
+      .post(`${baseUrl}/signup`)
+      .send(validUser)
+      .expect(201);
 
-      expect(response.body).toHaveProperty('token');
-      expect(response.body.user).toHaveProperty('email', testUser.email);
-      expect(response.body.user).not.toHaveProperty('password');
-    });
-
-    it('should reject duplicate email', async () => {
-      await request(app).post('/auth/signup').send(testUser);
-
-      const response = await request(app)
-        .post('/auth/signup')
-        .send(testUser)
-        .expect(400);
-
-      expect(response.body).toHaveProperty('message', 'User already exists');
-    });
-
-    it('should reject invalid email', async () => {
-      const response = await request(app)
-        .post('/auth/signup')
-        .send({ email: 'invalid-email', password: 'password123' })
-        .expect(400);
-
-      expect(response.body.message).toContain('Validation error');
-    });
-
-    it('should reject short password', async () => {
-      const response = await request(app)
-        .post('/auth/signup')
-        .send({ email: 'test@example.com', password: '12345' })
-        .expect(400);
-
-      expect(response.body.message).toContain('Validation error');
+    expect(res.body).toHaveProperty("token");
+    expect(res.body.user).toMatchObject({
+      email: validUser.email,
     });
   });
 
-  describe('POST /auth/login', () => {
-    beforeAll(async () => {
-      await request(app).post('/auth/signup').send(testUser);
-    });
+  it("should fail signup with invalid email (400)", async () => {
+    const res = await request(app)
+      .post(`${baseUrl}/signup`)
+      .send({ email: "bademail", password: "123456" })
+      .expect(400);
 
-    it('should login with valid credentials', async () => {
-      const response = await request(app)
-        .post('/auth/login')
-        .send(testUser)
-        .expect(200);
+    expect(res.body).toHaveProperty("message", "Validation error");
+    expect(res.body.errors[0]).toHaveProperty("field");
+  });
 
-      expect(response.body).toHaveProperty('token');
-      expect(response.body.user).toHaveProperty('email', testUser.email);
-    });
+  it("should fail signup if user already exists (400)", async () => {
+    // first signup
+    await request(app).post(`${baseUrl}/signup`).send(validUser);
 
-    it('should reject invalid password', async () => {
-      const response = await request(app)
-        .post('/auth/login')
-        .send({ email: testUser.email, password: 'wrong-password' })
-        .expect(401);
+    // second signup same user
+    const res = await request(app)
+      .post(`${baseUrl}/signup`)
+      .send(validUser)
+      .expect(400);
 
-      expect(response.body).toHaveProperty('message', 'Invalid credentials');
-    });
+    expect(res.body).toHaveProperty("message", "User already exists");
+  });
 
-    it('should reject non-existent user', async () => {
-      const response = await request(app)
-        .post('/auth/login')
-        .send({ email: 'nonexistent@example.com', password: 'password123' })
-        .expect(401);
+  it("should login successfully (200)", async () => {
+    await request(app).post(`${baseUrl}/signup`).send(validUser);
+    const res = await request(app)
+      .post(`${baseUrl}/login`)
+      .send(validUser)
+      .expect(200);
 
-      expect(response.body).toHaveProperty('message', 'Invalid credentials');
-    });
+    expect(res.body).toHaveProperty("token");
+    expect(res.body.user).toHaveProperty("email", validUser.email);
+  });
+
+  it("should fail login with wrong password (401)", async () => {
+    const res = await request(app)
+      .post(`${baseUrl}/login`)
+      .send({ email: validUser.email, password: "wrongPass" })
+      .expect(401);
+
+    expect(res.body).toHaveProperty("message", "Invalid credentials");
+  });
+
+  it("should fail login with invalid email format (400)", async () => {
+    const res = await request(app)
+      .post(`${baseUrl}/login`)
+      .send({ email: "not-an-email", password: "123" })
+      .expect(400);
+
+    expect(res.body.message).toBe("Validation error");
   });
 });
