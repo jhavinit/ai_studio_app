@@ -1,0 +1,6 @@
+{
+  "compilerOptions": {
+    "types": ["cypress"]
+  },
+  "include": ["**/*.ts", "e2e/app-flow.cy.ts"]
+}

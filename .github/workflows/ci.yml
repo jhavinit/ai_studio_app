@@ -110,3 +110,85 @@ jobs:
         with:
           name: frontend-coverage
           path: frontend/coverage
+  
+
+  # -------------------------
+  # ⚡ E2E Tests (Cypress)
+  # -------------------------
+  e2e-tests:
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    defaults:
+      run:
+        working-directory: frontend
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: aistudio_user
+          POSTGRES_PASSWORD: aistudio_pass
+          POSTGRES_DB: aistudio_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U aistudio_user -d aistudio_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      PORT: 3001
+      NODE_ENV: ${{ vars.NODE_ENV }}
+      PG_HOST: ${{ vars.PG_HOST }}
+      PG_PORT: ${{ vars.PG_PORT }}
+      PG_USER: ${{ secrets.PG_USER }}
+      PG_PASSWORD: ${{ secrets.PG_PASSWORD }}
+      PG_DB: ${{ secrets.PG_DB }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      DB_TYPE: postgres
+
+    steps:
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: ♻️ Cache npm packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: 📦 Install Frontend Dependencies
+        run: npm install
+
+      - name: 🚀 Start Backend (Node.js)
+        run: |
+          cd ../backend
+          npm install
+          npm run dev &
+          sleep 10
+
+      - name: 🖥️ Start Frontend (Vite/React)
+        run: |
+          npm run dev &
+          sleep 15
+
+      - name: 🧪 Run Cypress Headless Tests
+        run: npx cypress run --browser chrome
+
+      - name: 📸 Upload Cypress Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-artifacts
+          path: |
+            frontend/cypress/videos
+            frontend/cypress/screenshots
+            frontend/cypress/reports

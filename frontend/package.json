@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "jest --config jest.config.js --env=jsdom --coverage",
-    "test:ci": "jest --runInBand --detectOpenHandles --coverage"
+    "test:ci": "jest --runInBand --detectOpenHandles --coverage",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
