@@ -27,47 +27,42 @@ jobs:
           --health-retries=5
 
     env:
-      # 🌐 App Configuration
       PORT: 3001
       NODE_ENV: test
-
-      # 🔐 Security
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
-
-      # 🗄️ PostgreSQL Configuration
       PG_HOST: localhost
       PG_PORT: 5432
       PG_USER: aistudio_user
       PG_PASSWORD: aistudio_pass
       PG_DB: aistudio_db
       DB_TYPE: postgres
-
-      # ⚙️ Optional Configs
       UPLOADS_DIR: uploads-test
 
     steps:
-      # 1️⃣ Checkout code
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node.js
+      # ✅ No caching here (since no package-lock.json)
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          # Since package-lock.json is NOT committed, we skip cache-dependency-path
 
-      # 3️⃣ Install dependencies
-      # Use 'npm install' since npm ci requires a lockfile
+      # ✅ Optional caching (manual)
+      - name: ♻️ Cache npm packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('backend/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: 📦 Install dependencies
         run: npm install
 
-      # 4️⃣ Run Jest tests
       - name: 🧪 Run Jest tests
         run: npm test
 
-      # 5️⃣ Optionally, upload coverage results
       - name: 📊 Upload coverage artifact
         if: success()
         uses: actions/upload-artifact@v4
