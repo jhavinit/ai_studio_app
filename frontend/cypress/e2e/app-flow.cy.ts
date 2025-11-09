@@ -27,6 +27,7 @@ describe("🧠 Full E2E Flow — Signup → Login → Upload → Generate → Hi
     // ✅ Check token is saved
     cy.window().then((win) => {
       const token = win.localStorage.getItem("token");
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       expect(token).to.exist;
     });
 

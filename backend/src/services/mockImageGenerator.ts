@@ -8,7 +8,6 @@ export const mockGenerateImage = async (
 ): Promise<string> => {
   const outputFilename = `generated-${Date.now()}.png`;
   const outputPath = path.join(path.dirname(inputPath), outputFilename);
-
   // SVG overlay — positioned at the top, with translucent bar
   const svgOverlay = `
     <svg width="800" height="150">

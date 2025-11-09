@@ -9,6 +9,7 @@ import { simulateGeneration } from "../services/generationService";
 import fs from "fs";
 import path from "path";
 import { mockGenerateImage } from "../services/mockImageGenerator";
+import { appConfig } from "../configs/appConfig";
 
 const generationSchema = z.object({
   prompt: z.string().min(1, "Prompt is required").max(1000, "Prompt too long"),
@@ -35,7 +36,7 @@ export const createNewGeneration = async (
   res: Response
 ): Promise<Response> => {
   const uploadedFilePath = req.file
-    ? path.join(__dirname, `../${process.env.UPLOADS_DIR}`, req.file.filename)
+    ? path.join(__dirname, `../${appConfig.UPLOADS_DIR}`, req.file.filename)
     : undefined;
 
   try {
@@ -85,8 +86,8 @@ export const createNewGeneration = async (
 
     // Construct the new image URL for the generated version
     const generatedFilename = path.basename(generatedFilePath);
-    const imageUrl = `http://localhost:${process.env.PORT || 3001}/${
-      process.env.UPLOADS_DIR
+    const imageUrl = `http://localhost:${appConfig.PORT}/${
+      appConfig.UPLOADS_DIR
     }/${generatedFilename}`;
 
     // Save generation record in DB
@@ -106,7 +107,7 @@ export const createNewGeneration = async (
       createdAt: generation.created_at,
       status: generation.status,
     });
-  } catch (error: any) {
+  } catch (error) {
     deleteUploadedFile(uploadedFilePath);
 
     if (error instanceof z.ZodError) {

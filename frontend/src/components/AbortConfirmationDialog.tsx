@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
-interface AbortDialogProps {
+export interface AbortDialogProps {
     open: boolean;
     onConfirm: () => void;
     onCancel: () => void;

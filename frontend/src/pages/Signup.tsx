@@ -64,7 +64,7 @@ const Signup = () => {
         description: "Welcome to AI Studio",
       });
       navigate("/studio");
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Signup Failed",
         description: error.message || "Could not create account",

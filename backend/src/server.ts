@@ -1,24 +1,26 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
+// import dotenv from "dotenv";
 import path from "path";
-dotenv.config({ path: path.join(__dirname, "../.env") });
+// dotenv.config({ path: path.join(__dirname, "../.env") });
 
 import { initializeDatabase } from "./models/database";
+import { appConfig } from "./configs/appConfig";
 import authRoutes from "./routes/auth";
 import generationsRoutes from "./routes/generations";
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = appConfig.PORT;
 
 // Middleware
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:8080",
-    credentials: true,
-  })
-);
-// app.use(cors());
+// app.use(
+//   cors({
+//     origin: FRONTEND_URL || "http://localhost:8080",
+//     credentials: true,
+//   })
+// );
+// todo: enabled for local dev test - we can remove when we have a dns and prod
+app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -26,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 // Static files for uploaded images
 app.use(
   "/uploads",
-  express.static(path.join(__dirname, `./${process.env.UPLOADS_DIR}`))
+  express.static(path.join(__dirname, `./${appConfig.UPLOADS_DIR}`))
 );
 
 // Routes
@@ -60,7 +62,7 @@ const startServer = async () => {
 
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
-      console.log(`📝 Environment: ${process.env.NODE_ENV}`);
+      console.log(`📝 Environment: ${appConfig.NODE_ENV}`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);
@@ -68,7 +70,7 @@ const startServer = async () => {
   }
 };
 
-if (process.env.NODE_ENV !== "test") {
+if (appConfig.NODE_ENV !== "test") {
   startServer();
 }
 // startServer();

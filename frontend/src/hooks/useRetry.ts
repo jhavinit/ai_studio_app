@@ -28,7 +28,7 @@ export const useRetry = <T>({
           setIsRetrying(false);
           onSuccess?.(result);
           return result;
-        } catch (error: any) {
+        } catch (error) {
           lastError = error;
 
           // Check if it's a "Model overloaded" error

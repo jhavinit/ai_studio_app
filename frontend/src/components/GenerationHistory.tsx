@@ -11,7 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-
+import { appConfig } from '@/config/appConfig';
 interface GenerationHistoryProps {
   onSelect: (generation: Generation) => void;
   refreshTrigger?: number;
@@ -29,14 +29,14 @@ const GenerationHistory = ({ onSelect, refreshTrigger }: GenerationHistoryProps)
 
       setIsLoading(true);
       try {
-        const response = await fetch('http://localhost:3001/generations?limit=5', {
+        const response = await fetch(`${appConfig.API_URL}/generations?limit=5`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         if (!response.ok) throw new Error('Failed to fetch generations');
         const data = await response.json();
         setGenerations(data);
-      } catch (error: any) {
+      } catch (error) {
         toast({
           title: 'Error',
           description: error.message || 'Failed to load history',

@@ -1,21 +1,79 @@
 openapi: 3.0.3
 info:
   title: AI Studio API
-  description: REST API for AI image generation studio with authentication and generation management
+  description: |
+    REST API for AI image generation studio with user authentication and image generation management.
+    This API allows users to register, login, and generate AI images with different styles.
   version: 1.0.0
-  contact:
-    name: AI Studio Team
-    email: support@aistudio.com
 
 servers:
   - url: http://localhost:3001
     description: Development server
+  - url: /api
+    description: Production server (relative URL when behind proxy)
 
 tags:
   - name: Authentication
-    description: User authentication endpoints
+    description: User authentication and account management
   - name: Generations
-    description: Image generation endpoints
+    description: AI image generation and management
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Field that caused the error
+              message:
+                type: string
+                description: Error message for the field
+    
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+    
+    Generation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        imageUrl:
+          type: string
+          format: uri
+        prompt:
+          type: string
+        style:
+          type: string
+          enum: [photorealistic, artistic, abstract, vintage, modern]
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        createdAt:
+          type: string
+          format: date-time
 
 paths:
   /auth/signup:
@@ -35,6 +93,172 @@ paths:
                 - password
               properties:
                 email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  minLength: 6
+                  example: securePassword123
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT token for authentication
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Validation error or user already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate user
+      description: Login with email and password to get JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  example: securePassword123
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT token for authentication
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Invalid credentials
+        '500':
+          description: Internal server error
+
+  /generations:
+    post:
+      tags:
+        - Generations
+      summary: Create a new image generation
+      description: Upload an image and generate a new AI image with the specified style
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+                - prompt
+                - style
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Image file to process (JPEG/PNG, max 10MB)
+                prompt:
+                  type: string
+                  minLength: 1
+                  maxLength: 1000
+                  description: Description of the desired image
+                  example: "A beautiful sunset over mountains"
+                style:
+                  type: string
+                  enum: [photorealistic, artistic, abstract, vintage, modern]
+                  description: Style of the generated image
+      responses:
+        '201':
+          description: Image generation started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generation'
+        '400':
+          description: Invalid request (missing fields, invalid file type, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - invalid or missing JWT token
+        '413':
+          description: File too large (max 10MB)
+        '500':
+          description: Internal server error
+
+    get:
+      tags:
+        - Generations
+      summary: Get user's generations
+      description: Retrieve a list of the authenticated user's image generations
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 5
+          description: Maximum number of generations to return
+      responses:
+        '200':
+          description: List of user's generations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Generation'
+        '401':
+          description: Unauthorized - invalid or missing JWT token
+        '500':
+          description: Internal server error
                   type: string
                   format: email
                   example: user@example.com

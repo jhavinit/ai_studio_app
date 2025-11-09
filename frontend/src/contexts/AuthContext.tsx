@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { appConfig } from '@/config/appConfig';
 
 interface User {
   id: string;
@@ -25,18 +26,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check for existing session
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
-    
+
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
     }
-    
+
     setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     // This will connect to your backend API
-    const response = await fetch('http://localhost:3001/auth/login', {
+    const response = await fetch(`${appConfig.API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -50,13 +51,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const data = await response.json();
     setToken(data.token);
     setUser(data.user);
-    
+
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
   };
 
   const signup = async (email: string, password: string) => {
-    const response = await fetch('http://localhost:3001/auth/signup', {
+    const response = await fetch(`${appConfig.API_URL}/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -70,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const data = await response.json();
     setToken(data.token);
     setUser(data.user);
-    
+
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
   };

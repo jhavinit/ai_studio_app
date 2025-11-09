@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import Studio from "../Studio";
+import { ImageUploadProps } from "@/components/ImageUpload";
 
 // 🧩 Mock browser APIs
 global.URL.createObjectURL = jest.fn(() => "mocked-url");
@@ -45,7 +46,7 @@ jest.mock("@/hooks/useRetry", () => ({
 }));
 
 // ✅ Component mocks
-jest.mock("@/components/ImageUpload", () => (props: any) => {
+jest.mock("@/components/ImageUpload", () => (props: ImageUploadProps) => {
     React.useEffect(() => {
         if (props.onImageSelect) {
             const file = new File(["fake"], "mock.png", { type: "image/png" });
@@ -78,7 +79,7 @@ describe("🧠 Studio Page — Retry and Error Handling", () => {
             .mockRejectedValueOnce(new Error("Model overloaded"));
 
         // 🧩 Simulate executeWithRetry calling generate() 3 times and safely swallow errors
-        mockExecuteWithRetry.mockImplementation(async (fn: any) => {
+        mockExecuteWithRetry.mockImplementation(async (fn) => {
             for (let i = 0; i < 3; i++) {
                 try {
                     await fn();

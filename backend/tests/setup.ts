@@ -1,14 +1,18 @@
 // tests/setup.ts
 import { AppDataSource } from "../src/models/database";
-import dotenv from "dotenv";
-import path from "path";
+// import dotenv from "dotenv";
+// import path from "path";
 
-dotenv.config({ path: path.join(__dirname, "../.env") });
+// dotenv.config({ path: path.join(__dirname, "../.env") });
+
+import { appConfig } from "../src/configs/appConfig";
 
 beforeAll(async () => {
   if (!AppDataSource.isInitialized) {
     await AppDataSource.initialize();
   }
+
+  console.log(appConfig);
 
   // Start clean at the very beginning
   await AppDataSource.dropDatabase();
