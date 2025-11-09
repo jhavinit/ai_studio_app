@@ -1,38 +1,102 @@
-# AI Studio - Full Stack Application
+# 🎨 AI Studio - AI-Powered Image Generation Platform
 
-A complete AI image generation studio with user authentication, image upload, and generation history tracking.
+A full-stack application that enables users to generate AI images, manage their generations, and track history. Built with modern web technologies and best practices.
+
+
+# Quick Start Guide
+
+Get the AI Studio application running in 5 minutes!
+
+## Prerequisites
+
+- Node.js 18+ installed
+- npm
+- docker and docker compose
+
+## Option 1: Docker based Installation
+
+1. Clone the repository
+2. cd deployment
+3. chmod +x deploy.sh
+4. ./deploy.sh
+
+
+## Option 2: Manual Installation
+1. Clone the repository
+2. cd frontend
+3. npm i
+4. npm run dev
+5. cd backend
+6. create .env based on you env (connect to docker compose db for postgres)
+7. npm i
+8. npm run dev
+9. Open http://localhost:8080 in your browser!
+
+
+
+## ✨ Features
+
+- 🔐 User Authentication (Signup/Login)
+- 🖼️ AI Image Generation with style selection
+- 📚 Generation History
+- ⚡ Real-time Updates
+- 🔄 Responsive Design
+- 🔒 Secure JWT Authentication
+- 🚀 Optimized Build & Deployment
 
 ## 🚀 Tech Stack
 
-**Frontend:**
-- React 18 + TypeScript
-- Vite
-- Tailwind CSS + shadcn/ui
-- React Router v6
-- React Testing Library
+### Frontend
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS + shadcn/ui
+- **State Management**: React Context API
+- **Routing**: React Router v6
+- **Form Handling**: React Hook Form
+- **Testing**: React Testing Library, Cypress
 
-**Backend:**
-- Node.js + TypeScript
-- Express.js
-- JWT Authentication
-- SQLite Database
-- bcrypt for password hashing
-- Multer for file uploads
-- Zod for validation
+### Backend
+- **Runtime**: Node.js with TypeScript
+- **Framework**: Express.js
+- **Authentication**: JWT
+- **Database**: PostgreSQL
+- **File Storage**: Local File System (with Multer)
+- **Validation**: Zod
+- **Testing**: Jest + Supertest
 
-**Testing:**
-- Jest + Supertest (Backend)
-- React Testing Library (Frontend)
-- Playwright (E2E)
+### DevOps
+- **Containerization**: Docker
+- **Web Server**: Nginx (for production)
+- **CI/CD**: GitHub Actions (example configuration included)
 
-## 📦 Project Structure
+## 🏗️ Project Structure
 
 ```
 ai-studio/
-├── frontend/                 # React frontend (this directory)
+├── frontend/                 # React frontend
 │   ├── src/
 │   │   ├── components/      # Reusable UI components
-│   │   ├── contexts/        # React contexts (AuthContext)
+│   │   ├── contexts/        # React contexts (Auth, etc.)
+│   │   ├── hooks/          # Custom React hooks
+│   │   ├── pages/          # Page components
+│   │   └── config/         # App configuration
+│   └── public/             # Static assets
+│
+├── backend/                 # Node.js backend
+│   ├── src/
+│   │   ├── configs/        # Configuration files
+│   │   ├── controllers/    # Route controllers
+│   │   ├── entities/       # TypeScript interfaces
+│   │   ├── middleware/     # Express middleware
+│   │   ├── models/         # Database models
+│   │   ├── routes/         # API routes
+│   │   ├── services/       # Business logic
+│   │   └── server.ts       # Entry point
+│   └── uploads/            # Generated images storage
+│
+└── deployment/             # Deployment configurations
+    └── nginx/              # Nginx configuration
+        └── nginx.conf      # Production web server config
 │   │   ├── hooks/           # Custom hooks (useGenerate, useRetry)
 │   │   ├── pages/           # Page components
 │   │   └── ...
@@ -50,7 +114,7 @@ ai-studio/
 │   ├── uploads/             # Uploaded images
 │   ├── database.sqlite      # SQLite database
 │   └── package.json
-├── e2e/                      # End-to-end tests
+├── frontend/cypress/e2e/                      # End-to-end tests
 ├── .github/workflows/        # CI/CD workflows
 ├── README.md
 ├── OPENAPI.yaml
@@ -96,30 +160,25 @@ npm run dev
 ### Backend Tests
 ```bash
 cd backend
+modify .env for test env if needed
 npm test                    # Run all tests
-npm run test:coverage      # Run with coverage
 ```
 
 ### Frontend Tests
 ```bash
+cd frontend
 npm test                    # Run all frontend tests
-npm run test:coverage      # Run with coverage
 ```
 
 ### E2E Tests
 ```bash
 # Make sure both frontend and backend are running
-npm run test:e2e           # Run Playwright tests
+npx cypress run --browser chrome       # Run Cypress tests
 ```
 
 ## 🔧 Environment Variables
 
-### Backend (.env)
-```
-PORT=3001
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
-NODE_ENV=development
-```
+### Backend (.env) example file attached
 
 ## 📝 API Documentation
 
@@ -205,7 +264,7 @@ npm run test:e2e           # Run E2E tests
 - Make sure ports 3001 and 8080 are available
 
 **Database issues:**
-- Delete `backend/database.sqlite` and restart backend server
+- Delete `volume postgres` and restart backend server
 - It will auto-create tables on startup
 
 ## 🚀 Production Deployment Notes
@@ -220,32 +279,6 @@ For production deployment, consider:
 6. **Rate Limiting**: Add rate limiting middleware
 7. **Monitoring**: Add logging and error tracking (Sentry, LogRocket)
 8. **CI/CD**: GitHub Actions workflow is ready to use
-
-## 📦 Extracting for Submission
-
-This project is ready to be extracted and submitted! Here's what to include:
-
-```bash
-# 1. Create a clean copy
-git init
-git add .
-git commit -m "Initial commit: AI Studio application"
-
-# 2. Create GitHub repository
-# Follow GitHub instructions to push to your new repo
-
-# 3. Create Pull Requests
-# Create at least 2 feature branches and PRs as per assignment requirements
-```
-
-**Required Files for Submission:**
-- ✅ Complete codebase (frontend + backend)
-- ✅ README.md (setup instructions)
-- ✅ OPENAPI.yaml (API specification)
-- ✅ EVAL.md (implementation checklist)
-- ✅ AI_USAGE.md (AI tools documentation)
-- ✅ .github/workflows/ci.yml (CI/CD pipeline)
-- ✅ All test files
 
 ## 📄 License
 

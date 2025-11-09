@@ -10,6 +10,7 @@ services:
       POSTGRES_USER: $PG_USER
       POSTGRES_PASSWORD: $PG_PASSWORD
       POSTGRES_DB: $PG_DB
+    # todo comment ports: enabled for local testing
     ports:
       - "5432:5432"
     volumes:
@@ -29,6 +30,7 @@ services:
     restart: always
     volumes:
       - .env:/app/.env
+    # todo comment ports: enabled for local testing
     ports:
       - "3001:3001"
     healthcheck:

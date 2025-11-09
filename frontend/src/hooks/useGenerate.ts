@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { appConfig } from "@/config/appConfig";
 
 export interface Generation {
   id: string;
@@ -36,7 +37,7 @@ export const useGenerate = ({
       formData.append("prompt", prompt);
       formData.append("style", style);
 
-      const response = await fetch("http://localhost:3001/generations", {
+      const response = await fetch(`${appConfig.API_URL}/generations`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

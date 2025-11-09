@@ -2,14 +2,15 @@ import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { User } from "../entities/User";
 import { Generation } from "../entities/Generation";
+import { appConfig } from "../configs/appConfig";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
-  host: process.env.PG_HOST || "localhost",
-  port: Number(process.env.PG_PORT) || 5432,
-  username: process.env.PG_USER || "aistudio_user",
-  password: process.env.PG_PASSWORD || "aistudio_pass",
-  database: process.env.PG_DB || "aistudio_db",
+  host: appConfig.PG_HOST || "localhost",
+  port: Number(appConfig.PG_PORT) || 5432,
+  username: appConfig.PG_USER || "aistudio_user",
+  password: appConfig.PG_PASSWORD || "aistudio_pass",
+  database: appConfig.PG_DB || "aistudio_db",
   synchronize: true, // Auto-create tables (turn off in prod, use migrations instead)
   logging: false,
   entities: [User, Generation],

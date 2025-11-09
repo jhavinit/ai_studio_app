@@ -7,15 +7,16 @@ import {
 } from "../controllers/generationsController";
 import { authMiddleware } from "../middleware/auth";
 import fs from "fs";
+import { appConfig } from "../configs/appConfig";
 
 const router = express.Router();
 
-const uploadsDir = path.join(__dirname, `../${process.env.UPLOADS_DIR}`);
+const uploadsDir = path.join(__dirname, `../${appConfig.UPLOADS_DIR}`);
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Configure multer for file uploads
+// Configure multer for files
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, uploadsDir);
