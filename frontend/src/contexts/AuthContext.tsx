@@ -25,12 +25,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check for existing session
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
-    
+
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
     }
-    
+
     setIsLoading(false);
   }, []);
 
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const data = await response.json();
     setToken(data.token);
     setUser(data.user);
-    
+
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
   };
@@ -70,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const data = await response.json();
     setToken(data.token);
     setUser(data.user);
-    
+
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
   };

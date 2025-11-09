@@ -11,6 +11,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import Studio from "../Studio";
+import { ImageUploadProps } from "@/components/ImageUpload";
+import { AbortDialogProps } from "@/components/AbortConfirmationDialog";
 
 // ---- Browser API mocks used across tests ----
 global.URL.createObjectURL = jest.fn(() => "mocked-url");
@@ -51,7 +53,7 @@ jest.mock("@/hooks/useRetry", () => ({
 }));
 
 // Light-weight UI mocks (keeps test fast / focused)
-jest.mock("@/components/ImageUpload", () => (props: any) => {
+jest.mock("@/components/ImageUpload", () => (props: ImageUploadProps) => {
     // When ImageUpload mounts, call onImageSelect with a sample File (so Studio sees an image).
     React.useEffect(() => {
         if (props.onImageSelect) {
@@ -68,7 +70,7 @@ jest.mock("@/components/GenerationHistory", () => () => (
 
 // Our Abort dialog mock exposes a confirm button that triggers props.onConfirm()
 // (this matches how your previous mocks behaved and gives us a stable target).
-jest.mock("@/components/AbortConfirmationDialog", () => (props: any) => (
+jest.mock("@/components/AbortConfirmationDialog", () => (props: AbortDialogProps) => (
     <div data-testid="mock-abort-dialog">
         <button data-testid="mock-abort-confirm" onClick={props.onConfirm}>
             Confirm Abort
@@ -95,7 +97,7 @@ describe("🧠 Studio Page — Abort Flow", () => {
         );
 
         // executeWithRetry should call the passed function (like the real hook)
-        mockExecuteWithRetry.mockImplementation(async (fn: any) => {
+        mockExecuteWithRetry.mockImplementation(async (fn) => {
             // call fn but don't await completion (simulating in-flight work)
             try {
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises

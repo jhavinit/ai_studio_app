@@ -55,7 +55,7 @@ export const useGenerate = ({
       setIsLoading(false);
       onSuccess?.(data);
       return data;
-    } catch (err: any) {
+    } catch (err) {
       if (err.name === "AbortError") {
         setError("Generation aborted");
         onError?.("Generation aborted");

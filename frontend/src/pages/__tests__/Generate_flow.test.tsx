@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import Studio from "../Studio";
+import { ImageUploadProps } from "@/components/ImageUpload"
 
 // 🧩 Mock browser-only APIs
 global.URL.createObjectURL = jest.fn(() => "mocked-url");
@@ -45,7 +46,7 @@ jest.mock("@/hooks/useRetry", () => ({
 }));
 
 // ✅ Lightweight component mocks
-jest.mock("@/components/ImageUpload", () => (props: any) => {
+jest.mock("@/components/ImageUpload", () => (props: ImageUploadProps) => {
     React.useEffect(() => {
         if (props.onImageSelect) {
             const file = new File(["fake"], "mock.png", { type: "image/png" });
@@ -78,7 +79,7 @@ describe("🧠 Studio Page — Generate Flow", () => {
             status: "success",
         });
 
-        mockExecuteWithRetry.mockImplementation(async (fn: any) => await fn());
+        mockExecuteWithRetry.mockImplementation(async (fn) => await fn());
 
         render(
             <MemoryRouter>

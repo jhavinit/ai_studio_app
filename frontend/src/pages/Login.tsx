@@ -45,7 +45,7 @@ const Login = () => {
         description: "Successfully logged in",
       });
       navigate("/studio");
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Login Failed",
         description: error.message || "Invalid credentials",

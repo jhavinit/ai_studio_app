@@ -36,7 +36,7 @@ const GenerationHistory = ({ onSelect, refreshTrigger }: GenerationHistoryProps)
         if (!response.ok) throw new Error('Failed to fetch generations');
         const data = await response.json();
         setGenerations(data);
-      } catch (error: any) {
+      } catch (error) {
         toast({
           title: 'Error',
           description: error.message || 'Failed to load history',

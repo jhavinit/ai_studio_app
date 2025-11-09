@@ -106,7 +106,7 @@ export const createNewGeneration = async (
       createdAt: generation.created_at,
       status: generation.status,
     });
-  } catch (error: any) {
+  } catch (error) {
     deleteUploadedFile(uploadedFilePath);
 
     if (error instanceof z.ZodError) {

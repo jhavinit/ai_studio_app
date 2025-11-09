@@ -1,8 +1,14 @@
 import type { Config } from "tailwindcss";
+import animate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   prefix: "",
   theme: {
     container: {
@@ -60,13 +66,13 @@ export default {
         },
       },
       backgroundImage: {
-        'gradient-primary': 'var(--gradient-primary)',
-        'gradient-accent': 'var(--gradient-accent)',
-        'gradient-subtle': 'var(--gradient-subtle)',
+        "gradient-primary": "var(--gradient-primary)",
+        "gradient-accent": "var(--gradient-accent)",
+        "gradient-subtle": "var(--gradient-subtle)",
       },
       boxShadow: {
-        'elegant': 'var(--shadow-elegant)',
-        'glow': 'var(--shadow-glow)',
+        elegant: "var(--shadow-elegant)",
+        glow: "var(--shadow-glow)",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -97,5 +103,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [animate],
 } satisfies Config;

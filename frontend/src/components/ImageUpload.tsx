@@ -3,7 +3,7 @@ import { Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-interface ImageUploadProps {
+export interface ImageUploadProps {
   onImageSelect: (file: File | null) => void;
   selectedImage: File | null;
   disabled?: boolean;
@@ -101,8 +101,8 @@ const ImageUpload = ({ onImageSelect, selectedImage, disabled }: ImageUploadProp
               }
             }}
             className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${disabled
-                ? "border-muted bg-muted/50 cursor-not-allowed"
-                : "border-primary/30 bg-muted/20 hover:bg-muted/40 hover:border-primary/50"
+              ? "border-muted bg-muted/50 cursor-not-allowed"
+              : "border-primary/30 bg-muted/20 hover:bg-muted/40 hover:border-primary/50"
               }`}
           >
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
